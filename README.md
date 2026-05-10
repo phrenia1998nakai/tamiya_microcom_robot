@@ -1,8 +1,7 @@
 # tamiya_microcom_robot
 Program to control Tamiya's microcomputer robot(crawler type)
 
-【MICROCOMPUTER ROBOT (CRAWLER TYPE)】
-https://www.tamiya.com/english/products/71201/index.html
+[MICROCOMPUTER ROBOT (CRAWLER TYPE)](https://www.tamiya.com/english/products/71201/index.html)
 
 This is the Python program that controls the robot shown above.
 When this program is installed on the robot, the robot will move in a figure-eight pattern 
