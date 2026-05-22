@@ -20,9 +20,11 @@ pin16.write_digital(0)
 left_turn = 0
 # Right turn flag
 right_turn = 0
-
 # Ultrasonic sensor address
 address = 0
+
+# Ultrasonic sensor startup time
+start_time = 0
 # reflection time
 reflection_time = 0
 # Reflection time (higher digits)
@@ -42,6 +44,7 @@ def get_distance_from_obstacles():
     global address, distance
     address = 0x2C
     distance = 0
+    # Connect to the ultrasonic sensor, obtain the reflection distance
     conn_i2c()
     # When the distance to the obstacle is within 100cm
     if 0 <= reflaction_distance and reflaction_distance <= 1000:
@@ -54,17 +57,19 @@ def get_distance_from_obstacles():
 
 # Connect to the ultrasonic sensor via I2C
 def conn_i2c():
-    global reflection_time, reflection_time_h, reflection_time_l, response, reflaction_distance
+    global start_time, reflection_time, reflection_time_h, reflection_time_l, response, reflaction_distance
+    start_time = running_time()
     reflection_time = 0
     reflection_time_h = 0
     reflection_time_l = 0
     response = 0
     reflaction_distance = 0
-    # If the ultrasonic sensor does not start or does not return a correct result, repeat the process
-    while response == 0 or (reflection_time_h == 0 and reflection_time_l == 0):
+    # If the ultrasonic sensor startup within 50ms or does not return a correct result, repeat the process
+    while reflection_time_h == 0 and reflection_time_l and running_time() - start_time < 50:
         # Send the value 51 to the ultrasonic sensor (address: 44) and start using it
         command_51 = struct.pack(">B", 51)
         i2c.write(address, bytearray(command_51), False)
+        # Wait 0.1 second
         sleep(100)
         # Get a response from the ultrasonic sensor
         response = int.from_bytes(i2c.read(address, 1, False), "big")
@@ -73,18 +78,21 @@ def conn_i2c():
             # Send the value 16 to address 44 and perform the operation of obtaining the sum of the higher and lower digits of the reflection time
             command_16 = struct.pack(">B", 16)
             i2c.write(address, bytearray(command_16), False)
+            # Wait 0.1 second
             sleep(100)
             # Get the sum of the higher and lower digits of the firing time
             reflection_time = int.from_bytes(i2c.read(address, 1, False), "big")
             # Send the value 15 to address 44 and retrieve the reflection time (higher digits)
             command_15 = struct.pack(">B", 15)
             i2c.write(address, bytearray(command_15), False)
+            # Wait 0.1 second
             sleep(100)
             # Get the reflection time (higher digits)
             reflection_time_h = int.from_bytes(i2c.read(address, 1, False), "big")
             # Send the value 14 to address 44 and retrieve the reflection time (lower digits)
             command_14 = struct.pack(">B", 14)
             i2c.write(address, bytearray(command_14), False)
+            # Wait 0.1 second
             sleep(100)
             # Get the reflection time (lower digits)
             reflection_time_l = int.from_bytes(i2c.read(address, 1, False), "big")
@@ -109,48 +117,61 @@ while True:
     pin13.write_analog(511)
     # Stop the left motor
     pin14.write_analog(511)
-    # Play the built-in music
+    # Wait 1 second
+    sleep(1000)
     if left_turn == 0 and right_turn == 0:
+        # Play the built-in music
         music.play(music.ENTERTAINER, pin=pin8, wait=True, loop=False)
-    else:
-        music.play(music.BA_DING, pin=pin8, wait=True, loop=False)
+        # Wait 1 second
+        sleep(1000)
+    # Play the built-in music
+    music.play(music.BA_DING, pin=pin8, wait=True, loop=False)
+    # Wait 1 second
     sleep(1000)
     # Check the distance to the obstacle
     get_distance_from_obstacles()
+    # Wait 1 second
     sleep(1000)
     # If the distance to the obstacle is within 10 cm
     if 0 < distance and distance < 100:
-        # Stop the right motor
-        pin13.write_analog(511)
-        # Stop the left motor
-        pin14.write_analog(511)
         # Output audio
         speech.say("Detect obstacles", speed=120, pitch=50, throat=50, mouth=200)
+        # Wait 1 second
         sleep(1000)
         # Play the built-in music
         music.play(music.DADADADUM, pin=pin8, wait=True, loop=False)
+        # Wait 1 second
         sleep(1000)
         # Show anger mark
         display.show(Image.ANGRY)
+        # Wait 1 second
         sleep(1000)
+        # Turn off the LED display
+        display.clear()
     # Turn left three times
     elif left_turn < 3:
         # Turn the right motor
         pin13.write_analog(1023)
         # Turn the left motor
-        pin14.write_analog(1023)
+        pin14.write_analog(910)
+        # Wait 2 second
         sleep(2000)
         # Output audio
         speech.say("Turn Left", speed=120, pitch=50, throat=50, mouth=200)
+        # Wait 1 second
         sleep(1000)
         # Show left arrow
         display.show(Image.ARROW_E)
+        # Wait 1 second
         sleep(1000)
+        # Turn off the LED display
+        display.clear()
         # Turn the right motor
         pin13.write_analog(1023)
         # Turn the left motor
         pin14.write_analog(0)
-        sleep(1790)
+        # Wait 1.2 second
+        sleep(1200)
         # Count up the left turn flag
         left_turn += 1
     # Run diagonally and turns to the right
@@ -158,19 +179,25 @@ while True:
         # Turn the right motor
         pin13.write_analog(1023)
         # Turn the left motor
-        pin14.write_analog(1023)
+        pin14.write_analog(910)
+        # Wait 8 second
         sleep(8000)
         # Output audio
         speech.say("Turn Right", speed=120, pitch=50, throat=50, mouth=200)
+        # Wait 1 second
         sleep(1000)
         # Show right arrow
         display.show(Image.ARROW_W)
+        # Wait 1 second
         sleep(1000)
+        # Turn off the LED display
+        display.clear()
         # Turn the right motor
         pin13.write_analog(0)
         # Turn the left motor
         pin14.write_analog(1023)
-        sleep(1790)
+        # Wait 1.2 second
+        sleep(1200)
         # Count up the left turn flag
         left_turn += 1
     # Turn right three times
@@ -178,19 +205,24 @@ while True:
         # Turn the right motor
         pin13.write_analog(1023)
         # Turn the left motor
-        pin14.write_analog(1023)
+        pin14.write_analog(910)
+        # Wait 2 second
         sleep(2000)
         # Output audio
         speech.say("Turn Right", speed=120, pitch=50, throat=50, mouth=200)
+        # Wait 1 second
         sleep(1000)
         # Show right arrow
         display.show(Image.ARROW_W)
+        # Wait 1 second
         sleep(1000)
+        # Turn off the LED display
+        display.clear()
         # Turn the right motor
         pin13.write_analog(0)
         # Turn the left motor
         pin14.write_analog(1023)
-        sleep(1790)
+        sleep(1200)
         # Count up the right turn flag
         right_turn += 1
     # Run to the starting point
@@ -198,7 +230,8 @@ while True:
         # Turn the right motor
         pin13.write_analog(1023)
         # Turn the left motor
-        pin14.write_analog(1023)
+        pin14.write_analog(910)
+        # Wait 4 second
         sleep(4000)
         # Reset the flag
         left_turn = 0
