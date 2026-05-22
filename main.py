@@ -64,7 +64,7 @@ def conn_i2c():
     reflection_time_l = 0
     response = 0
     reflaction_distance = 0
-    # 起動して50ms未満または正常な結果が返って来ない場合は繰り返す
+    # 起動して50ミリ秒未満、または正常な結果が返って来ない場合は繰り返す
     while reflection_time_h == 0 and reflection_time_l and running_time() - start_time < 50:
         # 超音波センサー(アドレス：44)に値：51を送り、使用を開始する
         command_51 = struct.pack(">B", 51)
@@ -121,18 +121,18 @@ while True:
     sleep(1000)
     if left_turn == 0 and right_turn == 0:
         # 内蔵されている音楽を鳴らす
-        # music.play(music.ENTERTAINER, pin=pin8, wait=True, loop=False)
+        music.play(music.ENTERTAINER, pin=pin8, wait=True, loop=False)
         # 1秒待機する
         sleep(1000)
     # 内蔵されている音楽を鳴らす
-    # music.play(music.BA_DING, pin=pin8, wait=True, loop=False)
+    music.play(music.BA_DING, pin=pin8, wait=True, loop=False)
     # 1秒待機する
     sleep(1000)
     # 障害物との距離を確認する
     get_distance_from_obstacles()
     # 1秒待機する
     sleep(1000)
-    # 障害物との距離が10cmの場合
+    # 障害物との距離が10cm未満の場合
     if 0 < distance and distance < 100:
         # 音声を出力する
         speech.say("Detect obstacles", speed=120, pitch=50, throat=50, mouth=200)
@@ -171,7 +171,7 @@ while True:
         # 左のモーターを回す
         pin14.write_analog(0)
         # 1.2秒待機する
-        sleep(1150)
+        sleep(1200)
         # 左旋回フラグをカウントアップする
         left_turn += 1
     # 対角線上に走行し右回旋する
